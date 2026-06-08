@@ -89,6 +89,21 @@ require_once __DIR__ . '/includes/header.php';
                 <a href="login.php" class="btn btn-blue">Login to Request Mentorship</a>
             </div>
             <?php endif; ?>
+            <?php if (isLoggedIn() && (isAdmin() || (currentUser()['email'] ?? '') === ($mentor['email'] ?? ''))): ?>
+            <div class="form-card" style="margin-top:2rem;">
+                <h3 style="margin-bottom:1rem;color:var(--gray-900);">Update Profile Photo</h3>
+                <form method="POST" action="actions/upload-mentor-profile.php" enctype="multipart/form-data">
+                    <?= csrfField() ?>
+                    <input type="hidden" name="mentor_id" value="<?= (int)$mentor['id'] ?>">
+                    <div class="form-group">
+                        <label>Upload Profile Photo</label>
+                        <input type="file" name="mentor_photo" accept="image/jpeg,image/png,image/webp">
+                        <p class="photo-upload-hint">JPG, PNG or WEBP — max 2MB. Appears on mentor profile.</p>
+                    </div>
+                    <button type="submit" class="btn btn-blue"><i class="fas fa-upload"></i> Upload Photo</button>
+                </form>
+            </div>
+            <?php endif; ?>
             <div style="text-align:center;margin-top:1.5rem;"><a href="mentors.php">&larr; Back to All Mentors</a></div>
         </div>
         <?php else: ?>
