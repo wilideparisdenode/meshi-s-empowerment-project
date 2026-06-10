@@ -142,6 +142,9 @@ function uploadPhoto(array $file, string $subdir, ?string $oldFilename = null): 
     $dest = $dir . '/' . $filename;
 
     if (!move_uploaded_file($file['tmp_name'], $dest)) {
+        $isUploaded = is_uploaded_file($file['tmp_name']) ? 'yes' : 'no';
+        $dirPerm = is_dir($dir) ? substr(sprintf('%o', fileperms($dir)), -3) : 'n/a';
+        error_log("uploadPhoto: move_uploaded_file failed; tmp={$file['tmp_name']}; dest={$dest}; is_uploaded_file={$isUploaded}; dir_perm={$dirPerm}");
         return ['success' => false, 'error' => 'Could not save the uploaded photo.'];
     }
 

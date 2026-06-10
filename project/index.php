@@ -15,23 +15,22 @@ require_once __DIR__ . '/includes/header.php';
 
 <section class="hero hero-with-bg">
     <div class="hero-overlay"></div>
-    <div class="container hero-grid">
+    <div class="container hero-container">
         <div class="hero-content">
             <h1>Designing a <span>Smarter Future</span> for Every Girl</h1>
             <p>Welcome to the Smart Girl Empowerment Platform — your gateway to education, mentorship, scholarships, and skill development. Built to help girls in Bamenda and beyond achieve their dreams.</p>
+            
             <div class="hero-buttons">
                 <a href="register.php" class="btn btn-primary"><i class="fas fa-user-plus"></i> Get Started Free</a>
                 <a href="landing.php" class="btn btn-outline"><i class="fas fa-play-circle"></i> Learn More</a>
             </div>
+            
             <div class="hero-stats">
                 <div class="hero-stat"><strong><?= $stats['users'] + 500 ?>+</strong><span>Girls Empowered</span></div>
                 <div class="hero-stat"><strong><?= $stats['courses'] ?>+</strong><span>Online Courses</span></div>
                 <div class="hero-stat"><strong><?= $stats['mentors'] ?>+</strong><span>Expert Mentors</span></div>
                 <div class="hero-stat"><strong><?= $stats['scholarships'] ?>+</strong><span>Scholarships</span></div>
             </div>
-        </div>
-        <div class="hero-visual">
-            <img src="<?= SITE_URL ?>/assets/images/hero-girls-digital.jpg" alt="Young girls studying with digital tools and laptops" class="hero-side-image">
         </div>
     </div>
 </section>

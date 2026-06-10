@@ -18,6 +18,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $data = [trim($_POST['full_name']), trim($_POST['title']), trim($_POST['expertise']), trim($_POST['bio']),
             trim($_POST['email']), trim($_POST['phone']), (int)$_POST['years_experience']];
+        $createAccount = !empty($_POST['create_account']);
+        $accountPassword = trim($_POST['account_password'] ?? '');
+        $linkUserId = (int) ($_POST['link_user_id'] ?? 0);
         $oldImage = null;
         if ($id) {
             $stmt = $pdo->prepare("SELECT image_url FROM mentors WHERE id = ?");
@@ -26,10 +29,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pdo->prepare("UPDATE mentors SET full_name=?, title=?, expertise=?, bio=?, email=?, phone=?, years_experience=? WHERE id=?")->execute([...$data, $id]);
             $mentorId = $id;
             setFlash('success', 'Mentor was updated successfully.');
+            // if admin provided a user id to link, update mentors.user_id
+            if ($linkUserId) {
+                // ensure user exists
+                $u = $pdo->prepare("SELECT id FROM users WHERE id = ?");
+                $u->execute([$linkUserId]);
+                if ($u->fetch()) {
+                    $pdo->prepare("UPDATE mentors SET user_id = ? WHERE id = ?")->execute([$linkUserId, $mentorId]);
+                }
+            }
         } else {
             $pdo->prepare("INSERT INTO mentors (full_name, title, expertise, bio, email, phone, years_experience) VALUES (?,?,?,?,?,?,?)")->execute($data);
             $mentorId = (int) $pdo->lastInsertId();
             setFlash('success', 'Mentor was added successfully.');
+            // Optionally create a linked user account for this mentor
+            if ($createAccount) {
+                if ($accountPassword === '') {
+                    setFlash('warning', 'Create account requested but no password provided.');
+                } else {
+                    // ensure email not already used
+                    $stmtCheck = $pdo->prepare("SELECT id FROM users WHERE email = ?");
+                    $stmtCheck->execute([trim($_POST['email'])]);
+                    if ($stmtCheck->fetch()) {
+                        setFlash('error', 'Cannot create user account: email already registered.');
+                    } else {
+                        $hash = password_hash($accountPassword, PASSWORD_DEFAULT);
+                        $stmtIns = $pdo->prepare("INSERT INTO users (full_name, email, password, phone, location, profile_image, role) VALUES (?, ?, ?, ?, ?, ?, 'mentor')");
+                        $stmtIns->execute([trim($_POST['full_name']), trim($_POST['email']), $hash, trim($_POST['phone'] ?? ''), '', 'default-avatar.png']);
+                        $newUserId = (int) $pdo->lastInsertId();
+                        $pdo->prepare("UPDATE mentors SET user_id = ? WHERE id = ?")->execute([$newUserId, $mentorId]);
+                        setFlash('success', 'Mentor user account created and linked. Email: ' . trim($_POST['email']));
+                    }
+                }
+            }
         }
         $upload = uploadPhoto($_FILES['mentor_photo'] ?? [], 'mentors', $oldImage ?: null);
         if (!$upload['success']) {
@@ -79,6 +111,17 @@ require_once __DIR__ . '/includes/admin-header.php';
         <div class="form-row">
             <div class="form-group"><label>Email</label><input type="email" name="email" required value="<?= e($mentor['email'] ?? '') ?>"></div>
             <div class="form-group"><label>Phone</label><input type="text" name="phone" value="<?= e($mentor['phone'] ?? '') ?>"></div>
+        </div>
+        <div class="form-row">
+            <div class="form-group" style="flex:1;">
+                <label><input type="checkbox" name="create_account" value="1"> Create mentor user account</label>
+                <input type="password" name="account_password" placeholder="Password for mentor account (if creating)" style="width:100%;margin-top:.5rem;">
+            </div>
+            <div class="form-group" style="flex:1;">
+                <label>Or link existing user id</label>
+                <input type="number" name="link_user_id" placeholder="Existing users.id to link" value="<?= (int)($mentor['user_id'] ?? 0) ?>">
+                <small>Use this to link an existing registered user to this mentor.</small>
+            </div>
         </div>
         <div class="form-group"><label>Years Experience</label><input type="number" name="years_experience" value="<?= (int)($mentor['years_experience'] ?? 0) ?>"></div>
         <button type="submit" class="btn btn-blue">Save</button>

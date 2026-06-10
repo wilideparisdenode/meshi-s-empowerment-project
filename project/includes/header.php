@@ -5,6 +5,19 @@ if (!defined('DB_HOST')) {
 $currentPage = basename($_SERVER['PHP_SELF'], '.php');
 $user = currentUser();
 $flash = getFlash();
+// Determine if the current user is associated with a mentor profile
+$isMentorUser = false;
+if ($user) {
+    try {
+        $pdo = getDBConnection();
+        $stmt = $pdo->prepare("SELECT id FROM mentors WHERE user_id = ? OR email = ? LIMIT 1");
+        $stmt->execute([$user['id'], $user['email']]);
+        $isMentorUser = (bool) $stmt->fetchColumn();
+    } catch (Exception $e) {
+        // ignore DB errors here; fallback to role check
+        $isMentorUser = isset($user['role']) && $user['role'] === 'mentor';
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -40,7 +53,7 @@ $flash = getFlash();
     <nav class="navbar" id="navbar">
         <div class="container nav-container">
             <a href="<?= SITE_URL ?>/index.php" class="logo">
-                <i class="fas fa-star"></i>
+               
                 <span>Smart<strong>Girl</strong></span>
             </a>
             <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">
@@ -51,6 +64,9 @@ $flash = getFlash();
                 <li><a href="<?= SITE_URL ?>/landing.php" class="<?= $currentPage === 'landing' ? 'active' : '' ?>">About</a></li>
                 <li><a href="<?= SITE_URL ?>/courses.php" class="<?= $currentPage === 'courses' ? 'active' : '' ?>">Courses</a></li>
                 <li><a href="<?= SITE_URL ?>/mentors.php" class="<?= $currentPage === 'mentors' ? 'active' : '' ?>">Mentors</a></li>
+                <?php if ($isMentorUser): ?>
+                    <li><a href="<?= SITE_URL ?>/mentor-dashboard.php" class="<?= $currentPage === 'mentor-dashboard' ? 'active' : '' ?>">Mentor Dashboard</a></li>
+                <?php endif; ?>
                 <li><a href="<?= SITE_URL ?>/scholarships.php" class="<?= $currentPage === 'scholarships' ? 'active' : '' ?>">Scholarships</a></li>
                 <li><a href="<?= SITE_URL ?>/events.php" class="<?= $currentPage === 'events' ? 'active' : '' ?>">Events</a></li>
                 <li><a href="<?= SITE_URL ?>/forum.php" class="<?= $currentPage === 'forum' ? 'active' : '' ?>">Forum</a></li>

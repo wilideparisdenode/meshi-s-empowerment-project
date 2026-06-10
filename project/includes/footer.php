@@ -5,7 +5,7 @@
             <div class="footer-grid">
                 <div class="footer-col">
                     <div class="footer-logo">
-                        <i class="fas fa-star"></i>
+                       
                         <span>Smart<strong>Girl</strong></span>
                     </div>
                     <p>Empowering girls through education, mentorship, and skill development. Building confident leaders for tomorrow's Cameroon.</p>

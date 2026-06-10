@@ -101,54 +101,127 @@ img { max-width: 100%; height: auto; }
 .flash-close { position: absolute; right: 0; background: none; border: none; font-size: 1.25rem; cursor: pointer; opacity: 0.7; }
 
 /* Hero Section */
+/* Hero Section Base */
 .hero {
-    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 50%, var(--primary-light) 100%);
-    color: var(--white); padding: 5rem 0; position: relative; overflow: hidden;
+    color: var(--white); 
+    padding: 6rem 0; 
+    position: relative; 
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    min-height: 80vh; /* Gives it a grand, spacious look */
 }
-.hero-with-bg {
-    background: linear-gradient(135deg, rgba(22,62,117,0.88) 0%, rgba(30,86,160,0.85) 50%, rgba(61,125,212,0.82) 100%),
-        url('../images/hero-girls-bg.jpg') center center / cover no-repeat;
-    padding: 4rem 0 5rem;
-}
-.hero-overlay {
-    position: absolute; inset: 0;
-    background: linear-gradient(90deg, rgba(22,62,117,0.92) 0%, rgba(22,62,117,0.75) 45%, rgba(30,86,160,0.4) 100%);
-    z-index: 0;
-}
-.hero-grid {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 3rem;
-    align-items: center; position: relative; z-index: 1;
-}
-.hero-visual { display: flex; justify-content: center; align-items: center; }
-.hero-side-image {
-    width: 100%; max-width: 480px; border-radius: var(--radius);
-    box-shadow: 0 20px 50px rgba(0,0,0,0.35);
-    border: 4px solid rgba(255,255,255,0.25);
-    object-fit: cover; aspect-ratio: 4/5;
-}
-.hero::before {
-    content: ''; position: absolute; top: -50%; right: -20%;
-    width: 60%; height: 200%; background: rgba(255,255,255,0.05);
-    border-radius: 50%; transform: rotate(-15deg);
-}
-.hero-with-bg::before { display: none; }
-.hero-content { position: relative; z-index: 1; max-width: 650px; }
-.hero-badge {
-    display: inline-block; background: rgba(255,255,255,0.2);
-    padding: 0.35rem 1rem; border-radius: 20px; font-size: 0.85rem;
-    margin-bottom: 1rem; backdrop-filter: blur(4px);
-}
-.hero h1 { font-size: 2.75rem; font-weight: 700; line-height: 1.2; margin-bottom: 1rem; }
-.hero h1 span { color: #ffd700; }
-.hero p { font-size: 1.1rem; opacity: 0.95; margin-bottom: 2rem; line-height: 1.8; }
-.hero-buttons { display: flex; gap: 1rem; flex-wrap: wrap; }
-.hero-stats {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem;
-    margin-top: 3rem; padding-top: 2rem; border-top: 1px solid rgba(255,255,255,0.2);
-}
-.hero-stat strong { display: block; font-size: 2rem; font-weight: 700; }
-.hero-stat span { font-size: 0.85rem; opacity: 0.85; }
 
+/* Background Image & Watermark Overlay Layer */
+.hero-with-bg {
+    /* 1. Standard fallback color if the image fails to load */
+    background-color: #163e75; 
+    
+    /* 2. Enhanced gradient overlay + corrected image path */
+    background-image: 
+        linear-gradient(135deg, rgba(22, 62, 117, 0.8) 0%, rgba(4, 39, 136, 0.6) 100%),
+        url('../images/image.png');
+        
+    /* 3. Clean, separated positioning for better rendering */
+    background-position: center center;
+    background-size: cover;
+    background-repeat: no-repeat;
+    
+    /* 4. Ensure the hero section actually has height to display the background */
+    min-height: 80vh; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+/* Extra Overlay to ensure high text contrast */
+.hero-overlay {
+    position: absolute; 
+    inset: 0;
+    background: linear-gradient(90deg, rgba(22, 62, 117, 0.4) 0%, rgba(0, 0, 0, 0.4) 100%);
+    z-index: 1;
+}
+
+/* Container setup - Center aligned for a premium presentation */
+.hero-container {
+    position: relative; 
+    z-index: 2;
+    width: 100%;
+}
+
+/* Content Width & Alignment */
+.hero-content { 
+    max-width: 750px; 
+    margin: 0 auto; /* Centers the text box on the screen */
+    text-align: center; /* Makes the typography look cohesive */
+}
+
+/* Typography */
+.hero h1 { 
+    font-size: 3.5rem; /* Slightly larger since it has more breathing room */
+    font-weight: 800; 
+    line-height: 1.25; 
+    margin-bottom: 1.5rem; 
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3); /* Soft shadow so text stays razor sharp */
+}
+
+.hero h1 span { 
+    color: #ffd700; /* Keeps your gold accent */
+}
+
+.hero p { 
+    font-size: 1.25rem; 
+    opacity: 0.95; 
+    margin-bottom: 2.5rem; 
+    line-height: 1.8; 
+    text-shadow: 0 1px 5px rgba(0, 0, 0, 0.2);
+}
+
+/* Buttons Alignment */
+.hero-buttons { 
+    display: flex; 
+    gap: 1.25rem; 
+    justify-content: center; /* Centers buttons under text */
+    flex-wrap: wrap; 
+}
+
+/* Stats Layout */
+.hero-stats {
+    display: grid; 
+    grid-template-columns: repeat(4, 1fr); 
+    gap: 1.5rem;
+    margin-top: 4rem; 
+    padding-top: 2.5rem; 
+    border-top: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.hero-stat strong { 
+    display: block; 
+    font-size: 2.25rem; 
+    font-weight: 700; 
+    color: #ffffff;
+}
+
+.hero-stat span { 
+    font-size: 0.9rem; 
+    opacity: 0.85; 
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Responsive adjustments for phones/tablets */
+@media (max-width: 768px) {
+    .hero {
+        padding: 4rem 0;
+        min-height: auto;
+    }
+    .hero h1 {
+        font-size: 2.25rem;
+    }
+    .hero-stats {
+        grid-template-columns: repeat(2, 1fr); /* 2x2 grid on mobile so it doesn't squish */
+        gap: 2rem;
+    }
+}
 /* Welcome Banner */
 .welcome-banner {
     background: linear-gradient(135deg, var(--primary-dark), var(--primary));
