@@ -64,9 +64,7 @@ if ($user) {
                 <li><a href="<?= SITE_URL ?>/landing.php" class="<?= $currentPage === 'landing' ? 'active' : '' ?>">About</a></li>
                 <li><a href="<?= SITE_URL ?>/courses.php" class="<?= $currentPage === 'courses' ? 'active' : '' ?>">Courses</a></li>
                 <li><a href="<?= SITE_URL ?>/mentors.php" class="<?= $currentPage === 'mentors' ? 'active' : '' ?>">Mentors</a></li>
-                <?php if ($isMentorUser): ?>
-                    <li><a href="<?= SITE_URL ?>/mentor-dashboard.php" class="<?= $currentPage === 'mentor-dashboard' ? 'active' : '' ?>">Mentor Dashboard</a></li>
-                <?php endif; ?>
+                <?php /* Mentor features are integrated into the main Dashboard; no separate Mentor Dashboard link */ ?>
                 <li><a href="<?= SITE_URL ?>/scholarships.php" class="<?= $currentPage === 'scholarships' ? 'active' : '' ?>">Scholarships</a></li>
                 <li><a href="<?= SITE_URL ?>/events.php" class="<?= $currentPage === 'events' ? 'active' : '' ?>">Events</a></li>
                 <li><a href="<?= SITE_URL ?>/forum.php" class="<?= $currentPage === 'forum' ? 'active' : '' ?>">Forum</a></li>
