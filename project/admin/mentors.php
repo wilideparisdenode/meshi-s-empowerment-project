@@ -13,8 +13,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $pdo->prepare("DELETE FROM mentors WHERE id = ?")->execute([$_POST['delete_id']]);
         setFlash('success', 'Mentor was removed successfully.');
     } elseif (isset($_POST['request_id'], $_POST['status'])) {
-        $pdo->prepare("UPDATE mentor_requests SET status = ? WHERE id = ?")->execute([$_POST['status'], $_POST['request_id']]);
-        setFlash('success', 'Mentorship request was updated successfully.');
+        $reqId = (int) ($_POST['request_id']);
+        $newStatus = $_POST['status'];
+        $stmt = $pdo->prepare("SELECT status FROM mentor_requests WHERE id = ?");
+        $stmt->execute([$reqId]);
+        $existing = $stmt->fetchColumn();
+        if ($existing && $existing !== 'pending') {
+            setFlash('warning', 'Mentorship request was already responded to.');
+        } else {
+            $upd = $pdo->prepare("UPDATE mentor_requests SET status = ?, responded_at = NOW() WHERE id = ? AND status = 'pending'");
+            $upd->execute([$newStatus, $reqId]);
+            if ($upd->rowCount() > 0) {
+                setFlash('success', 'Mentorship request was updated successfully.');
+            } else {
+                setFlash('warning', 'Unable to update request. It may have been processed already.');
+            }
+        }
     } else {
         $data = [trim($_POST['full_name']), trim($_POST['title']), trim($_POST['expertise']), trim($_POST['bio']),
             trim($_POST['email']), trim($_POST['phone']), (int)$_POST['years_experience']];

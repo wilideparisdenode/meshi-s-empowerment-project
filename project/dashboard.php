@@ -3,7 +3,8 @@ $pageTitle = 'My Dashboard';
 require_once __DIR__ . '/config/init.php';
 requireLogin();
 $pdo = getDBConnection();
-$userId = currentUser()['id'];
+$user = currentUser();
+$userId = $user['id'];
 
 $tab = $_GET['tab'] ?? 'overview';
 
@@ -17,10 +18,24 @@ $events = $pdo->prepare("SELECT er.*, ev.title, ev.event_date, ev.location FROM 
 $events->execute([$userId]);
 $myEvents = $events->fetchAll();
 
-// Mentor requests
+// Outgoing requests (for users who request mentors)
 $requests = $pdo->prepare("SELECT mr.*, m.full_name as mentor_name FROM mentor_requests mr JOIN mentors m ON mr.mentor_id = m.id WHERE mr.user_id = ? ORDER BY mr.created_at DESC");
 $requests->execute([$userId]);
 $myRequests = $requests->fetchAll();
+
+// Detect if current user is a mentor (linked by user_id or email)
+$mentorProfile = null;
+$mentorStmt = $pdo->prepare("SELECT * FROM mentors WHERE user_id = ? OR email = ? LIMIT 1");
+$mentorStmt->execute([$userId, $user['email']]);
+$mentorProfile = $mentorStmt->fetch();
+
+// Incoming requests for mentors (if mentor)
+$incomingRequests = [];
+if ($mentorProfile) {
+    $inStmt = $pdo->prepare("SELECT mr.*, u.full_name as user_name, u.email as user_email FROM mentor_requests mr JOIN users u ON mr.user_id = u.id WHERE mr.mentor_id = ? ORDER BY mr.created_at DESC");
+    $inStmt->execute([$mentorProfile['id']]);
+    $incomingRequests = $inStmt->fetchAll();
+}
 
 // Resources
 $resources = $pdo->query("SELECT * FROM resources WHERE is_active = 1 ORDER BY created_at DESC LIMIT 10")->fetchAll();
@@ -70,6 +85,10 @@ require_once __DIR__ . '/includes/header.php';
                 <div class="stat-card"><h3><?= count($myCourses) ?></h3><p>Enrolled Courses</p></div>
                 <div class="stat-card accent"><h3><?= count($myEvents) ?></h3><p>Registered Events</p></div>
                 <div class="stat-card"><h3><?= count($myRequests) ?></h3><p>Mentor Requests</p></div>
+                <?php if ($mentorProfile): ?>
+                    <?php $pendingCount = 0; foreach ($incomingRequests as $ir) if ($ir['status'] === 'pending') $pendingCount++; ?>
+                    <div class="stat-card" style="min-width:180px;"><h3><?= (int)$pendingCount ?></h3><p>Pending Mentor Requests</p></div>
+                <?php endif; ?>
             </div>
             <h3 style="margin:1.5rem 0 1rem;color:var(--gray-900);">Quick Actions</h3>
             <div style="display:flex;flex-wrap:wrap;gap:1rem;">
@@ -121,26 +140,82 @@ require_once __DIR__ . '/includes/header.php';
             <?php endif; ?>
 
             <?php elseif ($tab === 'mentorship'): ?>
-            <h2 style="margin-bottom:1.5rem;">My Mentorship Requests</h2>
-            <?php if (empty($myRequests)): ?>
-            <div class="empty-state"><i class="fas fa-hands-helping"></i><p>No mentorship requests yet.</p><a href="mentors.php" class="btn btn-blue" style="margin-top:1rem;">Find a Mentor</a></div>
+            <h2 style="margin-bottom:1.5rem;">Mentorship</h2>
+            <?php if ($mentorProfile): ?>
+                <h3 style="margin-bottom:1rem;">Requests for <?= e($mentorProfile['full_name']) ?></h3>
+                <?php if (empty($incomingRequests)): ?>
+                    <div class="empty-state"><i class="fas fa-inbox"></i><p>No mentorship requests yet.</p></div>
+                <?php else: ?>
+                    <table class="data-table">
+                        <thead><tr><th>User</th><th>Message</th><th>Status</th><th>Date</th><th>Action</th></tr></thead>
+                        <tbody>
+                        <?php foreach ($incomingRequests as $r): ?>
+                        <tr>
+                            <td><strong><?= e($r['user_name']) ?></strong><br><small><?= e($r['user_email']) ?></small></td>
+                            <td><?= e(truncate($r['message'], 120)) ?></td>
+                            <td><span class="badge badge-<?= $r['status'] === 'accepted' ? 'success' : ($r['status'] === 'declined' ? 'danger' : 'warning') ?>"><?= e($r['status']) ?></span></td>
+                            <td><?= formatDate($r['created_at']) ?><?php if (!empty($r['responded_at'])): ?><br><small>Responded: <?= formatDate($r['responded_at']) ?></small><?php endif; ?></td>
+                            <td>
+                                <?php if ($r['status'] === 'pending'): ?>
+                                    <form method="POST" action="actions/mentor-request-action.php" style="display:inline;">
+                                        <?= csrfField() ?>
+                                        <input type="hidden" name="request_id" value="<?= (int)$r['id'] ?>">
+                                        <input type="hidden" name="status" value="accepted">
+                                        <button class="btn btn-green btn-sm" type="submit">Accept</button>
+                                    </form>
+                                    <form method="POST" action="actions/mentor-request-action.php" style="display:inline;margin-left:.5rem;">
+                                        <?= csrfField() ?>
+                                        <input type="hidden" name="request_id" value="<?= (int)$r['id'] ?>">
+                                        <input type="hidden" name="status" value="declined">
+                                        <button class="btn btn-red btn-sm" type="submit">Decline</button>
+                                    </form>
+                                <?php else: ?>
+                                    —
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                <?php endif; ?>
             <?php else: ?>
-            <table class="data-table">
-                <thead><tr><th>Mentor</th><th>Message</th><th>Status</th><th>Date</th></tr></thead>
-                <tbody>
-                <?php foreach ($myRequests as $r): ?>
-                <tr>
-                    <td><strong><?= e($r['mentor_name']) ?></strong></td>
-                    <td><?= e(truncate($r['message'], 80)) ?></td>
-                    <td><span class="badge badge-<?= $r['status'] === 'accepted' ? 'success' : ($r['status'] === 'declined' ? 'danger' : 'warning') ?>"><?= e($r['status']) ?></span></td>
-                    <td><?= formatDate($r['created_at']) ?></td>
-                </tr>
-                <?php endforeach; ?>
-                </tbody>
-            </table>
-            <?php endif; ?>
+                <h2 style="margin-bottom:1.5rem;">My Mentorship Requests</h2>
+                <?php if ($user['role'] === 'mentor' && !$mentorProfile): ?>
+                    <div class="card">
+                        <h3>Create your Mentor Profile</h3>
+                        <p>We couldn't find a mentor profile linked to your account. Create one now so users can request you as a mentor.</p>
+                        <form method="POST" action="actions/create-mentor-profile.php">
+                            <?= csrfField() ?>
+                            <div class="form-group"><label>Full Name</label><input type="text" name="full_name" required value="<?= e($user['full_name']) ?>"></div>
+                            <div class="form-group"><label>Title</label><input type="text" name="title" required placeholder="e.g. Leadership Coach"></div>
+                            <div class="form-group"><label>Expertise (comma separated)</label><input type="text" name="expertise" placeholder="e.g. Entrepreneurship, Finance"></div>
+                            <div class="form-group"><label>Short Bio</label><textarea name="bio" rows="4" placeholder="Short bio about your mentoring experience"></textarea></div>
+                            <button type="submit" class="btn btn-blue">Create Mentor Profile</button>
+                        </form>
+                    </div>
+                <?php else: ?>
+                <?php if (empty($myRequests)): ?>
+                <div class="empty-state"><i class="fas fa-hands-helping"></i><p>No mentorship requests yet.</p><a href="mentors.php" class="btn btn-blue" style="margin-top:1rem;">Find a Mentor</a></div>
+                <?php else: ?>
+                <table class="data-table">
+                    <thead><tr><th>Mentor</th><th>Message</th><th>Status</th><th>Date</th></tr></thead>
+                    <tbody>
+                    <?php foreach ($myRequests as $r): ?>
+                    <tr>
+                        <td><strong><?= e($r['mentor_name']) ?></strong></td>
+                        <td><?= e(truncate($r['message'], 80)) ?></td>
+                        <td><span class="badge badge-<?= $r['status'] === 'accepted' ? 'success' : ($r['status'] === 'declined' ? 'danger' : 'warning') ?>"><?= e($r['status']) ?></span></td>
+                        <td><?= formatDate($r['created_at']) ?></td>
+                    </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+                                    <?php endif; ?>
 
-            <?php elseif ($tab === 'profile'): ?>
+                            <?php endif; ?>
+                            <?php endif; ?>
+
+                        <?php elseif ($tab === 'profile'): ?>
             <h2 style="margin-bottom:1.5rem;">My Profile Photo</h2>
             <div style="max-width:400px;">
                 <?= renderAvatar(currentUser()['profile_image'] ?? null, currentUser()['full_name'], 'users', 'user-avatar') ?>
